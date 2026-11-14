@@ -1,0 +1,46 @@
+family,model,dataset,cell,label,n_broken,n_fixed,p_raw,p_holm_table2,significant_holm,sign,family_size
+table2_45,qwen2.5:7b,ml1m,base,default,36,13,0.0014026885036955,0.025248393066519,True,+,45
+table2_45,llama3.1:8b,ml1m,base,default,67,2,8.185726402265558e-18,3.110576032860912e-16,True,+,45
+table2_45,gemma2:9b,ml1m,base,default,54,22,0.000312978600837,0.00625957201674,True,+,45
+table2_45,qwen2.5:7b,ml1m,paraphrase,paraphrase,40,6,3.102803702859092e-07,8.06728962743364e-06,True,+,45
+table2_45,llama3.1:8b,ml1m,paraphrase,paraphrase,34,4,6.038535502739251e-07,1.4492485206574202e-05,True,+,45
+table2_45,gemma2:9b,ml1m,paraphrase,paraphrase,28,13,0.0275331558295874,0.3028647141254614,False,,45
+table2_45,qwen2.5:7b,ml1m,minbudget,one-sided budget,6,42,1.008748213848776e-07,2.7236201773916954e-06,True,-,45
+table2_45,llama3.1:8b,ml1m,minbudget,one-sided budget,44,3,2.4647306418046355e-10,8.133611117955297e-09,True,+,45
+table2_45,gemma2:9b,ml1m,minbudget,one-sided budget,3,35,6.677873898297548e-08,1.8698046915233135e-06,True,-,45
+table2_45,qwen2.5:7b,ml1m,reason,reasoning first,21,6,0.0059246122837066,0.0947937965393056,False,,45
+table2_45,llama3.1:8b,ml1m,reason,reasoning first,37,1,2.8376234695315356e-10,9.080395102500914e-09,True,+,45
+table2_45,gemma2:9b,ml1m,reason,reasoning first,24,9,0.0135309868492186,0.1894338158890604,False,,45
+table2_45,qwen2.5:7b,ml1m,history,user history,35,7,1.5097200957825407e-05,0.00031704122011433356,True,+,45
+table2_45,llama3.1:8b,ml1m,history,user history,48,2,2.26663132707472e-12,7.93320964476152e-11,True,+,45
+table2_45,gemma2:9b,ml1m,history,user history,42,7,3.6245783263666453e-07,9.061445815916613e-06,True,+,45
+table2_45,qwen2.5:7b,ml1m,befair,``be fair'',11,54,6.027539034309403e-08,1.7479863199497269e-06,True,-,45
+table2_45,llama3.1:8b,ml1m,befair,``be fair'',58,9,6.811497890247054e-10,2.1115643459765868e-08,True,+,45
+table2_45,gemma2:9b,ml1m,befair,``be fair'',39,23,0.0558972266997111,0.39128058689797773,False,,45
+table2_45,qwen2.5:7b,ml1m,audit,audit (2nd call),25,9,0.009041185490787,0.135617782361805,False,,45
+table2_45,llama3.1:8b,ml1m,audit,audit (2nd call),45,2,1.6044054973463062e-11,5.454978690977441e-10,True,+,45
+table2_45,gemma2:9b,ml1m,audit,audit (2nd call),34,13,0.0030876764615186,0.0524904998458162,False,,45
+table2_45,qwen2.5:7b,ml1m,count,"count, top 5",0,70,1.694065894508601e-21,6.945670167485264e-20,True,-,45
+table2_45,llama3.1:8b,ml1m,count,"count, top 5",0,70,1.694065894508601e-21,6.945670167485264e-20,True,-,45
+table2_45,gemma2:9b,ml1m,count,"count, top 5",0,71,8.470329472543003e-22,3.5575383784680614e-20,True,-,45
+table2_45,qwen2.5:7b,ml1m,countm,"count, matched",0,107,1.232595164407831e-32,5.300159206953673e-31,True,-,45
+table2_45,llama3.1:8b,ml1m,countm,"count, matched",0,114,9.629649721936181e-35,4.3333423748712814e-33,True,-,45
+table2_45,gemma2:9b,ml1m,countm,"count, matched",0,114,9.629649721936181e-35,4.3333423748712814e-33,True,-,45
+table2_45,qwen2.5:7b,ml1m,k05,$k=5$,15,5,0.0413894653320312,0.3311157226562496,False,,45
+table2_45,llama3.1:8b,ml1m,k05,$k=5$,26,0,2.9802322387695312e-08,8.940696716308594e-07,True,+,45
+table2_45,gemma2:9b,ml1m,k05,$k=5$,23,5,0.0009122341871261,0.0173324495553959,True,+,45
+table2_45,qwen2.5:7b,ml1m,k20,$k=20$,20,14,0.391528305131942,1.0,False,,45
+table2_45,llama3.1:8b,ml1m,k20,$k=20$,68,1,2.371692252312041e-19,9.24959978401696e-18,True,+,45
+table2_45,gemma2:9b,ml1m,k20,$k=20$,24,10,0.0243065101094543,0.2916781213134516,False,,45
+table2_45,qwen2.5:7b,ml1m,G3,$G=3$,11,12,1.0,1.0,False,,45
+table2_45,llama3.1:8b,ml1m,G3,$G=3$,19,0,3.814697265625e-06,8.392333984375e-05,True,+,45
+table2_45,gemma2:9b,ml1m,G3,$G=3$,15,8,0.2100396156311035,1.0,False,,45
+table2_45,qwen2.5:7b,ml1m,G5,$G=5$,3,3,1.0,1.0,False,,45
+table2_45,llama3.1:8b,ml1m,G5,$G=5$,7,0,0.015625,0.203125,False,,45
+table2_45,gemma2:9b,ml1m,G5,$G=5$,4,1,0.375,1.0,False,,45
+table2_45,qwen2.5:7b,ml1m,order_random,random order,24,14,0.143306654295884,0.859839925775304,False,,45
+table2_45,llama3.1:8b,ml1m,order_random,random order,38,6,9.430375484953402e-07,2.1689863615392824e-05,True,+,45
+table2_45,gemma2:9b,ml1m,order_random,random order,25,11,0.0288167196558788,0.3028647141254614,False,,45
+table2_45,qwen2.5:7b,ml1m,order_reverse,reversed order,22,9,0.0294493734836578,0.3028647141254614,False,,45
+table2_45,llama3.1:8b,ml1m,order_reverse,reversed order,45,0,5.684341886080803e-14,2.046363078989089e-12,True,+,45
+table2_45,gemma2:9b,ml1m,order_reverse,reversed order,47,0,1.4210854715202004e-14,5.258016244624741e-13,True,+,45

@@ -1,0 +1,82 @@
+{
+ "llama3.1_8b/base": {
+  "kind": "ollama_vs_metal",
+  "slates": 25,
+  "same_ranking": 24,
+  "same_violation": 25,
+  "same_claim": 25,
+  "same_confidence": 25,
+  "violations_1": 25,
+  "violations_2": 25
+ },
+ "gemma2_9b/base": {
+  "kind": "ollama_vs_metal",
+  "slates": 20,
+  "same_ranking": 20,
+  "same_violation": 20,
+  "same_claim": 20,
+  "same_confidence": 20,
+  "violations_1": 17,
+  "violations_2": 17
+ },
+ "qwen2.5_7b/fidelity_llamacpp_base": {
+  "kind": "ollama_vs_metal",
+  "slates": 55,
+  "same_ranking": 47,
+  "same_violation": 51,
+  "same_claim": 55,
+  "same_confidence": 52,
+  "violations_1": 44,
+  "violations_2": 42
+ },
+ "qwen2.5_7b/G3": {
+  "kind": "ollama_vs_cuda",
+  "slates": 82,
+  "same_ranking": 44,
+  "same_violation": 77,
+  "same_claim": 82,
+  "same_confidence": 62,
+  "violations_1": 75,
+  "violations_2": 72
+ },
+ "llama3.1_8b/fidelity_cuda_base": {
+  "kind": "metal_vs_cuda",
+  "slates": 92,
+  "same_ranking": 63,
+  "same_violation": 91,
+  "same_claim": 92,
+  "same_confidence": 92,
+  "violations_1": 89,
+  "violations_2": 88
+ },
+ "gemma2_9b/fidelity_cuda_base": {
+  "kind": "metal_vs_cuda",
+  "slates": 92,
+  "same_ranking": 78,
+  "same_violation": 90,
+  "same_claim": 92,
+  "same_confidence": 81,
+  "violations_1": 76,
+  "violations_2": 76
+ },
+ "llama3.1_8b/history": {
+  "kind": "metal_vs_cuda",
+  "slates": 114,
+  "same_ranking": 91,
+  "same_violation": 114,
+  "same_claim": 114,
+  "same_confidence": 114,
+  "violations_1": 111,
+  "violations_2": 111
+ },
+ "qwen2.5_7b/fidelity_cuda_base": {
+  "kind": "ollama_vs_cuda",
+  "slates": 92,
+  "same_ranking": 64,
+  "same_violation": 85,
+  "same_claim": 92,
+  "same_confidence": 76,
+  "violations_1": 73,
+  "violations_2": 70
+ }
+}

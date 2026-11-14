@@ -1,0 +1,13 @@
+model,dataset,half,n,claim_true,binding,violation,n_broken,n_fixed,mcnemar_p,auroc_tok,n_auroc,n_pos,n_neg,claim_constant,compliance_worse,token_auroc_low,conclusion_holds,note
+qwen2.5:7b,ml1m,first,189,1.0,0.7354497354497355,0.8201058201058201,130,25,2.577258605639949e-18,0.5203036053130929,189,34,155,True,True,True,True,
+qwen2.5:7b,ml1m,second,92,1.0,0.7065217391304348,0.782608695652174,61,16,2.4176312825015983e-07,0.6055555555555555,92,20,72,True,True,True,True,second half of the 400 sampled users; 92 remain in the first-300 core slates after filtering
+llama3.1:8b,ml1m,first,189,1.0,0.7354497354497355,0.9629629629629629,137,5,1.6673314648897893e-34,,189,7,182,True,True,,,token AUROC not testable: fewer than 10 positives in this half
+llama3.1:8b,ml1m,second,92,1.0,0.7065217391304348,0.9456521739130435,65,5,2.215352840138473e-14,,92,5,87,True,True,,,second half of the 400 sampled users; 92 remain in the first-300 core slates after filtering; token AUROC not testable: fewer than 10 positives in this half
+gemma2:9b,ml1m,first,189,1.0,0.7354497354497355,0.8465608465608465,126,16,2.225811352050909e-22,0.35129310344827586,189,29,160,True,True,True,True,
+gemma2:9b,ml1m,second,92,1.0,0.7065217391304348,0.8260869565217391,56,7,1.363671398024735e-10,0.19654605263157895,92,16,76,True,True,True,True,second half of the 400 sampled users; 92 remain in the first-300 core slates after filtering
+qwen2.5:7b,mind,first,185,1.0,0.7027027027027027,0.8432432432432433,110,9,3.164625220477421e-23,0.5360300618921309,185,29,156,True,True,True,True,
+qwen2.5:7b,mind,second,0,,,,0,0,,,0,0,0,,,,,second half of the 400 sampled users was not run: core MIND cells use the first 200
+llama3.1:8b,mind,first,185,1.0,0.7027027027027027,0.918918918918919,127,12,2.108124581703748e-25,0.32156862745098036,185,15,170,True,True,True,True,
+llama3.1:8b,mind,second,0,,,,0,0,,,0,0,0,,,,,second half of the 400 sampled users was not run: core MIND cells use the first 200
+gemma2:9b,mind,first,185,1.0,0.7027027027027027,0.7405405405405405,105,23,1.0313887967736937e-13,0.41970802919708033,185,48,137,True,True,True,True,
+gemma2:9b,mind,second,0,,,,0,0,,,0,0,0,,,,,second half of the 400 sampled users was not run: core MIND cells use the first 200

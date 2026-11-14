@@ -1,0 +1,16 @@
+model,dataset,cell,n,n_valid,n_invalid,n_violated,n_satisfied,violation,claim_true,claim_true_given_violated,n_claim_false,auroc_claim,notes
+qwen2.5:7b,ml1m,base,281,281,0,227,54,0.8078291814946619,1.0,1.0,0,0.5,claim constant true
+qwen2.5:7b,ml1m,feedback_memory_first,189,189,0,132,57,0.6984126984126984,0.9894179894179894,0.9848484848484849,2,0.5075757575757576,
+qwen2.5:7b,ml1m,feedback_memory_final,189,189,0,132,57,0.6984126984126984,0.9894179894179894,0.9848484848484849,2,0.5075757575757576,
+qwen2.5:7b,ml1m,feedback_retry_first,189,189,0,155,34,0.8201058201058201,1.0,1.0,0,0.5,claim constant true
+qwen2.5:7b,ml1m,feedback_retry_final,189,188,1,128,60,0.6825396825396826,0.5638297872340425,0.375,82,0.7958333333333334,1 invalid counted as violation
+llama3.1:8b,ml1m,base,281,281,0,269,12,0.9572953736654805,1.0,1.0,0,0.5,claim constant true
+llama3.1:8b,ml1m,feedback_memory_first,189,189,0,186,3,0.9841269841269841,1.0,1.0,0,,claim constant true; AUROC untestable: 3 compliant < 10
+llama3.1:8b,ml1m,feedback_memory_final,189,189,0,186,3,0.9841269841269841,1.0,1.0,0,,claim constant true; AUROC untestable: 3 compliant < 10
+llama3.1:8b,ml1m,feedback_retry_first,189,189,0,181,8,0.9576719576719577,1.0,1.0,0,,claim constant true; AUROC untestable: 8 compliant < 10
+llama3.1:8b,ml1m,feedback_retry_final,189,186,3,177,9,0.9523809523809523,0.7096774193548387,0.6949152542372882,54,,AUROC untestable: 9 compliant < 10; 3 invalid counted as violation
+gemma2:9b,ml1m,base,281,281,0,236,45,0.8398576512455516,1.0,1.0,0,0.5,claim constant true
+gemma2:9b,ml1m,feedback_memory_first,189,189,0,152,37,0.8042328042328042,1.0,1.0,0,0.5,claim constant true
+gemma2:9b,ml1m,feedback_memory_final,189,189,0,152,37,0.8042328042328042,1.0,1.0,0,0.5,claim constant true
+gemma2:9b,ml1m,feedback_retry_first,189,189,0,162,27,0.8571428571428571,1.0,1.0,0,0.5,claim constant true
+gemma2:9b,ml1m,feedback_retry_final,189,189,0,156,33,0.8253968253968254,0.8148148148148148,0.7756410256410257,35,0.6121794871794872,

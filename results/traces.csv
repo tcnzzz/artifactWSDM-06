@@ -1,0 +1,7 @@
+model,dataset,outputs,violated,violated_claimed,stated_all,stated_sum_gt1,stated_off,stated_says_ok_truth_not
+gemma2:9b,mind,90,75,74,17,2,17,12
+gemma2:9b,ml1m,182,149,144,54,17,54,46
+llama3.1:8b,mind,85,76,62,33,11,33,16
+llama3.1:8b,ml1m,182,170,133,58,35,58,30
+qwen2.5:7b,mind,92,78,76,50,26,50,24
+qwen2.5:7b,ml1m,187,152,147,132,75,127,80
