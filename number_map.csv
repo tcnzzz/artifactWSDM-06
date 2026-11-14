@@ -49,19 +49,19 @@ holm-ml1m-family-size,7,generated/numbers.tex,code/make_assets.py,229,sections/0
 holm-ml1m-nsig,6,generated/numbers.tex,code/make_assets.py,230,sections/02-setup.tex:11
 holm-nsig-adj,7,generated/numbers.tex,code/make_assets.py,222,sections/02-setup.tex:11
 holm-nsig-raw,8,generated/numbers.tex,code/make_assets.py,221,sections/02-setup.tex:11
-inf-gemma-pooled-cells,20,generated/numbers.tex,code/make_assets.py,504,sections/01-introduction.tex:6;sections/03-results.tex:27
+inf-gemma-pooled-cells,20,generated/numbers.tex,code/make_assets.py,504,sections/03-results.tex:27
 inf-gemma-pooled-p,0.38,generated/numbers.tex,code/make_assets.py,488,sections/00-abstract.tex:1;sections/01-introduction.tex:6;sections/03-results.tex:27
-inf-gemma-pooled-p-ci,"[0.36, 0.41]",generated/numbers.tex,code/make_assets.py,489,sections/01-introduction.tex:6;sections/03-results.tex:27
-inf-llama-pooled-cells,18,generated/numbers.tex,code/make_assets.py,504,sections/01-introduction.tex:6;sections/03-results.tex:27
+inf-gemma-pooled-p-ci,"[0.36, 0.41]",generated/numbers.tex,code/make_assets.py,489,sections/03-results.tex:27
+inf-llama-pooled-cells,18,generated/numbers.tex,code/make_assets.py,504,sections/03-results.tex:27
 inf-llama-pooled-p,0.43,generated/numbers.tex,code/make_assets.py,488,sections/00-abstract.tex:1;sections/01-introduction.tex:6;sections/03-results.tex:27
-inf-llama-pooled-p-ci,"[0.39, 0.47]",generated/numbers.tex,code/make_assets.py,489,sections/01-introduction.tex:6;sections/03-results.tex:27
+inf-llama-pooled-p-ci,"[0.39, 0.47]",generated/numbers.tex,code/make_assets.py,489,sections/03-results.tex:27
 inf-pooled-inputok-max,0.73,generated/numbers.tex,code/make_assets.py,494,sections/01-introduction.tex:6;sections/03-results.tex:27
 inf-pooled-inputok-min,0.67,generated/numbers.tex,code/make_assets.py,493,sections/01-introduction.tex:6;sections/03-results.tex:27
 inf-pooled-switches-max,0.83,generated/numbers.tex,code/make_assets.py,494,sections/03-results.tex:27
 inf-pooled-switches-min,0.67,generated/numbers.tex,code/make_assets.py,493,sections/03-results.tex:27
-inf-qwen-pooled-cells,20,generated/numbers.tex,code/make_assets.py,504,sections/01-introduction.tex:6;sections/03-results.tex:27
+inf-qwen-pooled-cells,20,generated/numbers.tex,code/make_assets.py,504,sections/03-results.tex:27
 inf-qwen-pooled-p,0.54,generated/numbers.tex,code/make_assets.py,488,sections/00-abstract.tex:1;sections/01-introduction.tex:6;sections/03-results.tex:27
-inf-qwen-pooled-p-ci,"[0.51, 0.56]",generated/numbers.tex,code/make_assets.py,489,sections/01-introduction.tex:6;sections/03-results.tex:27
+inf-qwen-pooled-p-ci,"[0.51, 0.56]",generated/numbers.tex,code/make_assets.py,489,sections/03-results.tex:27
 invalid-max-qwenthree-default,12.5,generated/numbers.tex,code/make_assets.py,172,sections/02-setup.tex:11
 invalid-max-small,11.1,generated/numbers.tex,code/make_assets.py,170,sections/02-setup.tex:11
 llama-mind-audit-auroctok,0.71,generated/numbers.tex,code/make_assets.py,134,sections/03-results.tex:83
