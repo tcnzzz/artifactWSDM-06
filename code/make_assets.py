@@ -143,6 +143,15 @@ for _, r in S.iterrows():
     if not pd.isna(r.get("repair_ms_median", np.nan)):
         num[f"{key}-repairms"] = f"{r.repair_ms_median:.0f}"
 
+# ------------------------------------------------------------------ projection evidence
+PJ = S[(S.cell == "base") & S.dataset.isin(["ml1m", "mind"])
+       & S.model.isin(["qwen2.5:7b", "llama3.1:8b", "gemma2:9b"])].dropna(
+           subset=["proj_util", "repair_util", "proj_minus_repair"])
+emit("proj-retain-min", pct((PJ.proj_util / PJ.repair_util).min()))
+emit("proj-retain-max", pct((PJ.proj_util / PJ.repair_util).max()))
+emit("proj-repair-gap-min", pts(PJ.proj_minus_repair.min()))
+emit("proj-repair-gap-max", pts(PJ.proj_minus_repair.max()))
+
 # ------------------------------------------------------------------ pooled statistics
 MAIN = S[S.dataset.isin(["ml1m", "mind"]) & ~S.cell.str.startswith("ablation")]
 E = MAIN[(MAIN.prompt == "explicit") & MAIN.model.isin(MODELS)]

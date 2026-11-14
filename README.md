@@ -232,6 +232,18 @@ the claim at 98.9-100%. The CSV records the per-cell counts and the reason a
 value is missing; the paper uses the same macros and does not infer more than
 these 189-slate cells support.
 
+## Projection utility
+
+`code/analyze.py` also solves the same integer program on the model's own order
+(scores `k, k-1, ..., 1`), which is the projection reference in the paper. On the
+six base cells (three small models x two datasets) it retains 96.8-99.5% of exact
+repair's utility; projection minus repair is -1.0 to +1.3 points and the 95%
+interval covers zero in every cell. On the ML-1M default slates it changes nDCG
+relative to the unprojected order by +1.4 [+0.4, +2.4] for Qwen, +0.9
+[-0.5, +2.4] for Llama and +1.1 [+0.1, +2.3] for Gemma. The per-cell values are
+the `proj_util`, `proj_ndcg`, `ndcg_minus_proj` and `proj_minus_repair` columns
+of `results/summary.csv`; `code/make_assets.py` turns them into the paper macros.
+
 ## Release packaging
 
 This directory is the anonymised release copy. Relative to the working copy it has these changes:

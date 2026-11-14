@@ -50,6 +50,16 @@ order as the score vector. Projection is only attempted when the base slate is
 feasible, which is the same condition, because feasibility depends only on the
 multiset of groups.
 
+**Utility evidence.** Across the six base cells (three small models on both
+datasets), projection retains **96.8-99.5%** of exact repair's utility; the
+projection-minus-repair difference is **-1.0 to +1.3** points and its 95%
+interval covers zero in every cell. On the ML-1M default slates it changes nDCG
+relative to the model's unprojected order by +1.4 [+0.4, +2.4] for Qwen,
++0.9 [-0.5, +2.4] for Llama and +1.1 [+0.1, +2.3] for Gemma. The columns are
+`proj_util`, `proj_ndcg`, `ndcg_minus_proj` and `proj_minus_repair` in
+`results/summary.csv`; the paper macros are `proj-retain-min/max`,
+`proj-repair-gap-min/max` and the per-cell `-ndcgminusproj` keys.
+
 ### Constraints
 
 1. **Each item once:** `sum_j x[i, j] = 1` for every item `i` (`k` equality rows).
