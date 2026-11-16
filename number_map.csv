@@ -37,11 +37,11 @@ head-fb-llama-final-failinvalid,95.2,generated/numbers.tex,code/make_assets.py,7
 head-fb-llama-first-failinvalid,95.8,generated/numbers.tex,code/make_assets.py,791,sections/03-results.tex:54
 head-fb-qwen-final-auroc,0.80,generated/numbers.tex,code/make_assets.py,797,sections/03-results.tex:54
 head-fb-qwen-final-caught,80,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
-head-fb-qwen-final-claimscompliant,106,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54;sections/03-results.tex:54
+head-fb-qwen-final-claimscompliant,106,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
 head-fb-qwen-final-compliant,60,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
 head-fb-qwen-final-failinvalid,68.3,generated/numbers.tex,code/make_assets.py,792,sections/03-results.tex:54
 head-fb-qwen-final-falsealarms,2,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
-head-fb-qwen-final-falseassurances,48,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54;sections/03-results.tex:54
+head-fb-qwen-final-falseassurances,48,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
 head-fb-qwen-final-valid,188,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
 head-fb-qwen-final-violations,128,generated/numbers.tex,code/make_assets.py,795,sections/03-results.tex:54
 head-fb-qwen-first-failinvalid,82.0,generated/numbers.tex,code/make_assets.py,791,sections/03-results.tex:54
