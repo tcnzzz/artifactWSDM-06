@@ -31,7 +31,7 @@ if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/check_numbers.XXXXXX")
-trap 'if [ "$KEEP" = 0 ]; then rm -rf "$MS/generated"; cp -a "$TMP/generated" "$MS/generated"; cp -a "$TMP/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"; mkdir -p "$MS/figures/data"; cp -a "$TMP/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"; for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv; do [ -f "$TMP/results/$f" ] && cp -a "$TMP/results/$f" "$ROOT/results/$f"; done; fi; rm -rf "$TMP"' EXIT
+trap 'if [ "$KEEP" = 0 ]; then rm -rf "$MS/generated"; cp -a "$TMP/generated" "$MS/generated"; cp -a "$TMP/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"; mkdir -p "$MS/figures/data"; cp -a "$TMP/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"; [ -f "$TMP/fig_frontier.pdf" ] && cp -a "$TMP/fig_frontier.pdf" "$ROOT/figures/fig_frontier.pdf"; for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv; do [ -f "$TMP/results/$f" ] && cp -a "$TMP/results/$f" "$ROOT/results/$f"; done; fi; rm -rf "$TMP"' EXIT
 
 # ---- 1. snapshot the shipped outputs -------------------------------------
 mkdir -p "$TMP/generated" "$TMP/results"
@@ -42,6 +42,9 @@ for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedbac
 done
 cp -a "$MS/figures/fig_dose_pgf.tex" "$TMP/fig_dose_pgf.tex" 2>/dev/null || true
 cp -a "$MS/figures/data/fig_dose_series.json" "$TMP/fig_dose_series.json" 2>/dev/null || true
+# frontier.py rewrites its PDF with fresh metadata; restore it too so a check
+# does not leave the release tree dirty.
+cp -a "$ROOT/figures/fig_frontier.pdf" "$TMP/fig_frontier.pdf" 2>/dev/null || true
 cut -d, -f1-7,9- "$TMP/results/frontier.csv" > "$TMP/frontier.notime.csv" 2>/dev/null || true
 
 # ---- 2. regenerate the derived CSVs that make_assets.py reads -------------

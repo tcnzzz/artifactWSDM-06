@@ -37,7 +37,7 @@ if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/reproduce.XXXXXX")
-trap 'rm -rf "$TMP"' EXIT
+trap '[ -f "$TMP/fig_frontier.pdf" ] && cp -a "$TMP/fig_frontier.pdf" "$ROOT/figures/fig_frontier.pdf"; [ -f "$TMP/frontier.csv" ] && cp -a "$TMP/frontier.csv" "$ROOT/results/frontier.csv"; rm -rf "$TMP"' EXIT
 
 # ---- 1. snapshot the shipped numbers -------------------------------------
 mkdir -p "$TMP/generated"
@@ -49,6 +49,7 @@ for f in frontier.csv multiplicity.csv multiplicity_table2.csv slack_strata.csv 
 done
 cp -a "$MS/figures/fig_dose_pgf.tex" "$TMP/fig_dose_pgf.tex" 2>/dev/null || true
 cp -a "$MS/figures/data/fig_dose_series.json" "$TMP/fig_dose_series.json" 2>/dev/null || true
+cp -a "$ROOT/figures/fig_frontier.pdf" "$TMP/fig_frontier.pdf" 2>/dev/null || true
 cp -a "$ROOT/number_map.csv" "$TMP/number_map.csv" 2>/dev/null || true
 # frontier.csv carries a wall-clock timing column, which is reported but not
 # part of the byte-identical check (the shipped copy is from another machine).

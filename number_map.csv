@@ -58,7 +58,7 @@ head-onesided-n,189,generated/numbers.tex,code/make_assets.py,759,sections/03-re
 head-onesided-qwen,54.5,generated/numbers.tex,code/make_assets.py,757,sections/03-results.tex:39
 head-proj-gain,+0.014,generated/numbers.tex,code/make_assets.py,802,sections/03-results.tex:56
 head-proj-gain-ci,"[0.004, 0.024]",generated/numbers.tex,code/make_assets.py,803,sections/03-results.tex:56
-head-q3-attempted,112,generated/numbers.tex,code/make_assets.py,739,sections/03-results.tex:15;sections/03-results.tex:17
+head-q3-attempted,112,generated/numbers.tex,code/make_assets.py,739,sections/03-results.tex:15;sections/03-results.tex:17;sections/06-conclusion.tex:2
 head-q3-caught,2,generated/numbers.tex,code/make_assets.py,725,sections/00-abstract.tex:1;sections/01-introduction.tex:15;sections/03-results.tex:15
 head-q3-caught-displayed,2,generated/numbers.tex,code/make_assets.py,729,sections/00-abstract.tex:1;sections/01-introduction.tex:15;sections/03-results.tex:17
 head-q3-changed,9,generated/numbers.tex,code/make_assets.py,731,sections/03-results.tex:17
