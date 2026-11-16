@@ -47,52 +47,69 @@ for f in frontier.csv multiplicity.csv multiplicity_table2.csv slack_strata.csv 
          feedback_claims.csv; do
   cp -a "$ROOT/results/$f" "$TMP/$f" 2>/dev/null || true
 done
+cp -a "$MS/figures/fig_dose_pgf.tex" "$TMP/fig_dose_pgf.tex" 2>/dev/null || true
+cp -a "$MS/figures/data/fig_dose_series.json" "$TMP/fig_dose_series.json" 2>/dev/null || true
 cp -a "$ROOT/number_map.csv" "$TMP/number_map.csv" 2>/dev/null || true
 # frontier.csv carries a wall-clock timing column, which is reported but not
 # part of the byte-identical check (the shipped copy is from another machine).
 cut -d, -f1-7,9- "$ROOT/results/frontier.csv" > "$TMP/frontier.notime.csv" 2>/dev/null || true
 
 # ---- 2. regenerate from saved outputs ------------------------------------
-say "== 1/9 max-min slack strata =="
+say "== 1/11 max-min slack strata =="
 "$PY" "$ROOT/code/slack_strata.py" 2>&1 | tee "$TMP/slack_strata.log"
 [ "${PIPESTATUS[0]}" = 0 ] || { bad "slack_strata.py failed"; exit 1; }
 
-say "== 2/9 position-weight sensitivity =="
+say "== 2/11 position-weight sensitivity =="
 "$PY" "$ROOT/code/position_sensitivity.py" 2>&1 | tee "$TMP/position.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "position_sensitivity.py failed"
 
-say "== 3/9 nDCG-violation frontier and baseline heuristics =="
+say "== 3/11 nDCG-violation frontier and baseline heuristics =="
 "$PY" "$ROOT/code/frontier.py" 2>&1 | tee "$TMP/frontier.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "frontier.py failed"
 
-say "== 4/9 calibration of the token probability =="
+say "== 4/11 calibration of the token probability =="
 "$PY" "$ROOT/code/calibration.py" 2>&1 | tee "$TMP/calibration.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "calibration.py failed"
 
-say "== 5/9 split-half and duplicate-run robustness =="
+say "== 5/11 split-half and duplicate-run robustness =="
 "$PY" "$ROOT/code/robustness.py" 2>&1 | tee "$TMP/robustness.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "robustness.py failed"
 
-say "== 6/9 feedback-loop claim honesty =="
+say "== 6/11 feedback-loop claim honesty =="
 "$PY" "$ROOT/code/feedback_claims.py" 2>&1 | tee "$TMP/feedback_claims.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "feedback_claims.py failed"
 
-say "== 7/9 macros, tables and dose figure =="
+say "== 7/11 reporting checks and clustered intervals =="
+"$PY" "$ROOT/code/verify_reporting_checks.py" --artifact "$ROOT" 2>&1 | tee "$TMP/verify_reporting.log"
+[ "${PIPESTATUS[0]}" = 0 ] || bad "verify_reporting_checks.py failed"
+"$PY" "$ROOT/code/verify_writing_revision.py" --artifact "$ROOT" 2>&1 | tee "$TMP/verify_writing.log"
+[ "${PIPESTATUS[0]}" = 0 ] || bad "verify_writing_revision.py failed"
+
+say "== 8/11 macros, tables and dose figure =="
 "$PY" "$ROOT/code/make_assets.py" 2>&1 | tee "$TMP/make_assets.log"
 [ "${PIPESTATUS[0]}" = 0 ] || { bad "make_assets.py failed"; exit 1; }
 
-say "== 8/9 number map =="
+say "== 9/11 number map =="
 "$PY" "$ROOT/code/number_map.py" 2>&1 | tee "$TMP/number_map.log"
 [ "${PIPESTATUS[0]}" = 0 ] || bad "number_map.py failed"
 
 # ---- 3. compare with the shipped copies ---------------------------------
-say "== 9/9 diff against shipped files =="
+say "== 10/11 diff against shipped files =="
 if diff -r "$TMP/generated" "$MS/generated" > "$TMP/generated.diff" 2>&1; then
   say "generated/: identical"
 else
   bad "generated/ changed"
   sed -n '1,40p' "$TMP/generated.diff"
 fi
+for pair in "fig_dose_pgf.tex:$MS/figures/fig_dose_pgf.tex" \
+            "fig_dose_series.json:$MS/figures/data/fig_dose_series.json"; do
+  name=${pair%%:*}; dest=${pair#*:}
+  if diff -q "$TMP/$name" "$dest" >/dev/null 2>&1; then
+    say "figures/$name: identical"
+  else
+    bad "figures/$name changed"
+  fi
+done
 cut -d, -f1-7,9- "$ROOT/results/frontier.csv" > "$TMP/frontier.new.notime.csv" 2>/dev/null || true
 if diff -q "$TMP/frontier.notime.csv" "$TMP/frontier.new.notime.csv" >/dev/null 2>&1; then
   say "frontier.csv: identical (time_ms_median excluded)"
@@ -118,7 +135,7 @@ if [ "$BUILD" = 1 ]; then
   if ! command -v latexmk >/dev/null 2>&1; then
     bad "latexmk not found; rerun with --no-build to skip the PDF"
   else
-    say "== building the PDF =="
+    say "== 11/11 building the PDF =="
     ( cd "$MS" && latexmk -C >/dev/null 2>&1
       latexmk -pdf -interaction=nonstopmode main.tex > "$TMP/build.log" 2>&1 )
     if [ ! -f "$MS/main.pdf" ]; then

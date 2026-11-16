@@ -1,27 +1,39 @@
-"""Turn results/*.csv into everything the manuscript displays:
-manuscript/generated/numbers.tex (macros), generated/tab_*.tex, and figures/fig_dose.pdf."""
-import re
+"""Turn saved results into everything the manuscript displays.
+
+Writes manuscript/generated/numbers.tex (macros), the three reporting tables,
+generated/writing_numbers.tex (clustered intervals), and the pgfplots dose
+figure with its data file.  No model call, no new inference: every value comes
+from results/*.csv, results/*.jsonl or results/ptrue/*.jsonl.
+"""
 import glob
 import json
 import os
+import re
+import sys
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from paperfig import GRAY, MODEL_NAME, MODEL_STYLE, apply_style  # noqa: E402
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import reporting_checks  # noqa: E402
+import writing_revision  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(HERE)
 MS = os.path.join(os.path.dirname(ROOT), "manuscript")
 GEN = os.path.join(MS, "generated")
+FIG = os.path.join(MS, "figures")
+FIGDATA = os.path.join(FIG, "data")
 os.makedirs(GEN, exist_ok=True)
+os.makedirs(FIGDATA, exist_ok=True)
 MODELS = ["qwen2.5:7b", "llama3.1:8b", "gemma2:9b"]
 SHORT = {"qwen2.5:7b": "qwen", "llama3.1:8b": "llama", "gemma2:9b": "gemma", "qwen2.5:14b": "qwenfourteen",
          "qwen3:8b": "qwenthree", "command-r:35b": "commandr", "llama3.3:70b": "llamaseventy",
          "qwen2.5:7b-fp16": "qwenfp"}
 STRONG = ["qwen2.5:14b", "qwen3:8b", "command-r:35b", "llama3.3:70b", "qwen2.5:7b-fp16"]
+MODEL_NAME = {"qwen2.5:7b": "Qwen2.5-7B", "llama3.1:8b": "Llama3.1-8B", "gemma2:9b": "Gemma2-9B",
+              "qwen2.5:14b": "Qwen2.5-14B", "qwen3:8b": "Qwen3-8B, thinking", "command-r:35b": "Command-R-35B",
+              "llama3.3:70b": "Llama3.3-70B", "qwen2.5:7b-fp16": "Qwen2.5-7B, FP16"}
 DS_NAME = {"ml1m": "ML-1M", "mind": "MIND"}
 S = pd.read_csv(os.path.join(ROOT, "results", "summary.csv"))
 num = {}
@@ -297,26 +309,50 @@ _dist = [len({round(it["score"], 2) for it in s_["items"][:10]}) for s_ in _tied
 num["mindtied-distinct"] = f"{np.mean(_dist):.1f}"
 num["mindtied-fullytied"] = pct(np.mean(np.array(_dist) == 1))
 
-# ------------------------------------------------------------------ Table 1: default cell
+# ------------------------------------------------------------------ Table 1: default cell (reporting columns)
+def _paired_input(model, ds, cell="base"):
+    """Input-order violation rate on the same valid feasible outputs as the table."""
+    rr = _CHK[(_CHK.model == model) & (_CHK.dataset == ds) & (_CHK.cell == cell)
+              & _CHK.valid & _CHK.feasible]
+    return 100 * rr.binding.mean() if len(rr) else float("nan")
+
+
+def _detected(model, ds, cell="base"):
+    """Reported violations / actual violations on the valid feasible outputs."""
+    rr = _CHK[(_CHK.model == model) & (_CHK.dataset == ds) & (_CHK.cell == cell)
+              & _CHK.valid & _CHK.feasible]
+    return f"{int((rr.violated.astype(bool) & (rr.claim == False)).sum())}/{int(rr.violated.astype(bool).sum())}"
+
+
+def _auc_ci(r):
+    a = auc_s(r)
+    return a if a == "--" else a.replace(" [", r" \ci{[") + "}"
+
+
 lines = []
 for ds in ("ml1m", "mind", "strong"):
     first = True
     for m in (STRONG if ds == "strong" else MODELS):
-        r = get(m, "ml1m" if ds == "strong" else ds, "base")
+        cell_ds = "ml1m" if ds == "strong" else ds
+        r = get(m, cell_ds, "base")
         if r is None:
             continue
-        a = get(m, "ml1m" if ds == "strong" else ds, "audit")
         lines.append(" & ".join([
-            ("ML-1M" if ds == "strong" else DS_NAME[ds]) if first else "", MODEL_NAME[m], str(int(r.n_valid)), pct(r.binding), pct(r.random_violation),
-            f"{pct(r.violation)} [{pct(r.violation_lo)}, {pct(r.violation_hi)}]",
-            f"{int(r.n_broken)}/{int(r.n_fixed)}", pval(HOLM10.get((m, "ml1m" if ds == "strong" else ds), r.mcnemar_p)),
-            pct(r.claim_true), str(int(r.conf_distinct)), auc_s(r),
-            "--" if a is None else pct(a.claim_true), "--" if a is None else auc_s(a, ci=False),
+            (DS_NAME["ml1m"] if ds == "strong" else DS_NAME[ds]) if first else "",
+            MODEL_NAME[m],
+            f"{int(r.n_valid)}/{int(r.n)}",
+            f"{_paired_input(m, cell_ds):.1f}",
+            f"{pct(r.violation)} \\ci{{[{pct(r.violation_lo)}, {pct(r.violation_hi)}]}}",
+            pval(HOLM10.get((m, cell_ds), r.mcnemar_p)),
+            pct(r.claim_true),
+            _detected(m, cell_ds),
+            _auc_ci(r),
         ]) + r" \\")
         first = False
-    if ds == "ml1m" or (ds == "mind" and any(get(m, "ml1m", "base") is not None for m in STRONG)):
+    if ds in ("ml1m", "mind"):
         lines.append(r"\midrule")
-open(os.path.join(GEN, "tab_base.tex"), "w").write(re.sub(r"\s*\\\\\s*$", "", "\n".join(lines)) + "\n")
+open(os.path.join(GEN, "tab_base_reporting.tex"), "w").write(
+    re.sub(r"\s*\\\\\s*$", "", "\n".join(lines)) + "\n")
 # ------------------------------------------------------------------ Table 2: robustness (ML-1M)
 ROWS = [("default", "base"), ("paraphrase", "paraphrase"), ("one-sided budget", "minbudget"),
         ("reasoning first", "reason"), ("user history", "history"), ("``be fair''", "befair"),
@@ -347,26 +383,37 @@ pd.DataFrame([{
     "sign": "" if T2[(m, cell)] >= 0.05 else ("+" if x.n_broken > x.n_fixed else "-"),
     "family_size": len(_t2),
 } for m, cell, x in _t2]).to_csv(os.path.join(ROOT, "results", "multiplicity_table2.csv"), index=False)
+FACTOR_ROWS = [
+    ("default", "base"),
+    ("paraphrase", "paraphrase"),
+    ("reasoning first", "reason"),
+    (None, None),                       # modified requirement
+    ("one-sided floor", "minbudget"),
+    ("count, top 5", "count"),
+    ("count, matched", "countm"),
+]
 lines = []
-for row in ROWS:
-    if row is None:
-        lines.append(r"\midrule")
+for label, cell in FACTOR_ROWS:
+    if cell is None:
+        lines.append(r"\midrule\multicolumn{10}{@{}l}{\emph{Modified requirement}}\\")
         continue
-    label, cell = row
     rs = [get(m, "ml1m", cell) for m in MODELS]
     if all(x is None for x in rs):
         continue
-    r0 = next(x for x in rs if x is not None)
-    cells = [label, pct(r0.binding, 0)]
+    cells = [label]
     for m, x in zip(MODELS, rs):
         if x is None:
             cells += ["--", "--", "--"]
             continue
         _p = T2.get((m, cell), x.mcnemar_p)
-        sig = "" if pd.isna(_p) or _p >= 0.05 else ("$^{+}$" if x.n_broken > x.n_fixed else "$^{-}$")
-        cells += [pct(x.violation, 0) + sig, pct(x.claim_true, 0), auc_s(x, ci=False)]
+        sig = "" if pd.isna(_p) or _p >= 0.05 else (r"\worse" if x.n_broken > x.n_fixed else r"\better")
+        claim = pct(x.claim_true, 0)
+        cells += [pct(x.violation, 0) + sig,
+                  rf"\ci{{{claim}}}" if claim == "100" else claim,
+                  auc_s(x, ci=False)]
     lines.append(" & ".join(cells) + r" \\")
-open(os.path.join(GEN, "tab_factors.tex"), "w").write(re.sub(r"\s*\\\\\s*$", "", "\n".join(lines)) + "\n")
+open(os.path.join(GEN, "tab_factors_reporting.tex"), "w").write(
+    re.sub(r"\s*\\\\\s*$", "", "\n".join(lines)) + "\n")
 # ------------------------------------------------------------------ feedback loops
 CHK = pd.read_json(os.path.join(ROOT, "results", "checked.jsonl"), lines=True)
 fb_rows = {}
@@ -420,20 +467,7 @@ for mode in ("retry", "memory"):
         emit(f"fbclaim-{mode}-firstclaimtrueviol-min", pct(F0.claim_true_given_violated.min()))
         emit(f"fbclaim-{mode}-firstclaimtrueviol-max", pct(F0.claim_true_given_violated.max()))
 
-# ------------------------------------------------------------------ Table 3: repair options (ML-1M)
-lines = []
-for m in MODELS:
-    r, h = get(m, "ml1m", "base"), get(m, "ml1m", "history")
-    if r is None:
-        continue
-    cells = [MODEL_NAME[m]]
-    for x in (r, h):
-        if x is None:
-            cells += ["--"] * 4
-            continue
-        cells += [f"{x.ndcg:.3f}", f"{x.proj_ndcg:.3f}", f"{x.repair_ndcg:.3f}", f"{x.base_ndcg:.3f}"]
-    lines.append(" & ".join(cells) + r" \\")
-open(os.path.join(GEN, "tab_repair.tex"), "w").write("\n".join(lines).rstrip() + "\n")
+# ------------------------------------------------------------------ labelled-subset sizes (repair table in the supplement)
 for m in MODELS:
     r = get(m, "ml1m", "base")
     if r is not None:
@@ -566,38 +600,216 @@ num["sim-trials"] = "100{,}000"
 num["sim-maxexcess"] = f"{(sim.risk - sim.upper).max():.4f}"
 num["sim-settings"] = str(len(sim))
 
+# ------------------------------------------------------------------ reporting checks and writing revision
+# Both modules read only saved records: checked.jsonl, ptrue/*.jsonl and
+# feedback_claims.csv.  They are the single source for the three reporting
+# tables, the clustered intervals and the headline prose numbers.
+ROWS = [json.loads(line) for line in open(os.path.join(ROOT, "results", "checked.jsonl"), encoding="utf-8")]
+PROBS = reporting_checks.load_probs(ROOT)
+RC = reporting_checks.compute(ROWS, PROBS, FBC.to_dict("records"))
+WC = writing_revision.clustered_ci(ROWS, PROBS, reporting_checks.MODELS)
+
+# ------------------------------------------------------------------ Table 4: separate audits (ML-1M)
+AUDIT_NAME = {"qwen2.5:7b": "Qwen2.5-7B", "llama3.1:8b": "Llama3.1-8B",
+              "gemma2:9b": "Gemma2-9B", "qwen2.5:14b": "Qwen2.5-14B"}
+lines = []
+for x in RC["matched_audits"]:
+    if x["dataset"] != "ml1m":
+        continue
+    z = x["audit"]
+    lines.append(f"{AUDIT_NAME[x['model']]} & {z['caught']}/{z['violations']} & "
+                 f"{z['false_alarms']}/{z['compliant']} & "
+                 f"{z['false_assurances']}/{z['claims_compliant']}" + r" \\")
+open(os.path.join(GEN, "tab_audit_reporting.tex"), "w").write("\n".join(lines) + "\n")
+
+# ------------------------------------------------------------------ clustered token-probability intervals
+# These live in their own file so the interval method is easy to find; the
+# values still pass through emit() so number_map.py can trace them.
+for r, name in zip(WC, ("qwen", "llama", "gemma")):
+    emit(f"writing-{name}-pooled-ci", f"[{r['ci_low']:.2f}, {r['ci_high']:.2f}]")
+
 # ------------------------------------------------------------------ Figure: dose-response in rho
-apply_style()
-RHO = ["rho050", "rho070", "rho080", "base", "rho095"]
-fig, axes = plt.subplots(1, 2, figsize=(3.4, 1.75), sharey=True)
-for ax, ds in zip(axes, ("ml1m", "mind")):
+# The JSON is the plotted data; the pgfplots file is a pure function of it, so
+# the figure inside the paper can be rebuilt without matplotlib or a PDF.
+RHO = [("rho050", 0.5), ("rho070", 0.7), ("rho080", 0.8), ("base", 0.9), ("rho095", 0.95)]
+series = {"source": "Generated by artifact/code/make_assets.py from results/summary.csv.",
+          "rho": [x for _, x in RHO], "panels": {}}
+for ds, panel in (("ml1m", "ML-1M"), ("mind", "MIND")):
+    pan = {"models": {}, "claimed": {}, "input": [], "random": []}
     ref = None
     for m in MODELS:
-        d = pd.concat([S[(S.model == m) & (S.dataset == ds) & (S.cell == c)] for c in RHO])
+        d = pd.concat([S[(S.model == m) & (S.dataset == ds) & (S.cell == c)] for c, _ in RHO])
+        d = d.sort_values("rho")
         if d.empty:
             continue
-        col, mk = MODEL_STYLE[m]
-        ax.errorbar(d.rho, 100 * d.violation, yerr=[100 * (d.violation - d.violation_lo), 100 * (d.violation_hi - d.violation)],
-                    color=col, marker=mk, capsize=1.5, elinewidth=0.6, label=MODEL_NAME[m])
-        ax.plot(d.rho, 100 * (1 - d.claim_true), color=col, marker=mk, ls=":", mfc="white", lw=0.9)
-        ref = d if ref is None or len(d) > len(ref) else ref
+        pan["models"][MODEL_NAME[m]] = {
+            "ci": [[round(100 * lo, 2), round(100 * hi, 2)]
+                   for lo, hi in zip(d.violation_lo, d.violation_hi)],
+            "viol": [round(100 * v, 2) for v in d.violation],
+        }
+        pan["claimed"][MODEL_NAME[m]] = [round(100 * (1 - c), 2) for c in d.claim_true]
+        ref = d if ref is None else ref
     if ref is not None:
-        ax.plot(ref.rho, 100 * ref.binding, color=GRAY, ls="--", marker="x", label="input order")
-        ax.plot(ref.rho, 100 * ref.random_violation, color=GRAY, ls="-.", lw=0.9, label="random order")
-    ax.set_title(DS_NAME[ds])
-    ax.set_xlabel(r"tightness $\rho$")
-    ax.set_xticks([0.5, 0.7, 0.9])
-    ax.set_xticks([0.8, 0.95], minor=True)
-    ax.grid(True, axis="y")
-axes[0].set_ylabel("slates violating (%)")
-handles, labels = axes[0].get_legend_handles_labels()
-fig.legend(handles, labels, loc="lower center", ncol=5, handlelength=1.6, fontsize=5.6, columnspacing=0.8,
-           bbox_to_anchor=(0.5, -0.01))
-fig.subplots_adjust(wspace=0.08, bottom=0.34)
-fig.savefig(os.path.join(MS, "figures", "fig_dose.pdf"))
+        pan["input"] = [round(100 * b, 2) for b in ref.binding]
+        pan["random"] = [round(100 * rv, 2) for rv in ref.random_violation]
+    series["panels"][panel] = pan
+open(os.path.join(FIGDATA, "fig_dose_series.json"), "w").write(json.dumps(series, indent=1) + "\n")
 
+
+def _dose_co(ys):
+    return " ".join(f"({x:g},{y:.2f})" for x, y in zip(series["rho"], ys))
+
+
+out = [r'''% Generated by artifact/code/make_assets.py -- do not edit by hand.
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=0.35cm, y descriptions at=edge left},
+  width=0.565\columnwidth, height=3.6cm,
+  xmin=0.47, xmax=0.98, xtick={0.5,0.7,0.8,0.9}, ymin=-4, ymax=104, ytick={0,25,50,75,100},
+  tick label style={font=\footnotesize}, label style={font=\footnotesize},
+  title style={font=\small\bfseries, yshift=-1.3ex},
+  axis line style={dInk!70, line width=0.5pt}, tick style={dInk!70}, major tick length=2pt,
+  axis x line*=bottom, axis y line*=left, ymajorgrids, grid style={dInk!12, line width=0.3pt},
+  xlabel={floor tightness $\rho$}, xlabel style={yshift=0.8ex},
+  every axis plot/.append style={line width=1pt, mark size=1.5pt},
+]''']
+DOSE_STYLE = [("Qwen2.5-7B", "dQwen", "*"), ("Llama3.1-8B", "dLlama", "square*"),
+              ("Gemma2-9B", "dGemma", "triangle*")]
+for i, (panel, pan) in enumerate(series["panels"].items()):
+    opts = f'title={{{panel}}}'
+    if i == 0:
+        opts += (r', ylabel={Actual violations (\%)}, ylabel style={yshift=-1.2ex},'
+                 r' legend to name=doselegend, legend columns=2,'
+                 r' legend style={draw=none, font=\footnotesize, row sep=-1pt,'
+                 r' /tikz/every even column/.append style={column sep=7pt}}')
+    out.append(rf'\nextgroupplot[{opts}]')
+    for name, col, mk in DOSE_STYLE:
+        m = pan["models"][name]
+        lo, hi = [c[0] for c in m["ci"]], [c[1] for c in m["ci"]]
+        out.append(rf'\addplot[draw=none, fill={col}, fill opacity=0.16, forget plot] coordinates {{{_dose_co(lo)} '
+                   + " ".join(f"({x:g},{y:.2f})" for x, y in zip(series["rho"][::-1], hi[::-1]))
+                   + r'} -- cycle;')
+    out.append(rf'\addplot[dInk!65, dashed, line width=0.8pt, mark=none] coordinates {{{_dose_co(pan["input"])}}};')
+    if i == 0:
+        out.append(r'\addlegendentry{Input ranking}')
+    out.append(rf'\addplot[dInk!45, dash dot, line width=0.8pt, mark=none] coordinates {{{_dose_co(pan["random"])}}};')
+    if i == 0:
+        out.append(r'\addlegendentry{Random permutation}')
+    out.append(rf'\addplot[dCrim, densely dotted, line width=1.3pt, mark=none] coordinates {{{_dose_co([0] * len(series["rho"]))}}};')
+    if i == 0:
+        out.append(r'\addlegendentry{Model-reported violations: 0\%}')
+    for name, col, mk in DOSE_STYLE:
+        out.append(rf'\addplot[{col}, mark={mk}, mark options={{fill={col}}}] coordinates {{{_dose_co(pan["models"][name]["viol"])}}};')
+        if i == 0:
+            out.append(rf'\addlegendentry{{{name}}}')
+out.append(r'''\end{groupplot}
+\node[anchor=south, yshift=2.4ex] at ($(group c1r1.north west)!0.5!(group c2r1.north east)$) {\pgfplotslegendfromname{doselegend}};
+\end{tikzpicture}''')
+open(os.path.join(FIG, "fig_dose_pgf.tex"), "w").write("\n".join(out) + "\n")
+
+# ------------------------------------------------------------------ headline prose numbers
+core, q3 = RC["rounding"]
+emit("head-core-n", f"{core['exact']['n']:,}")
+emit("head-core-violated", f"{core['exact']['violations']:,}")
+emit("head-core-violated-displayed", f"{core['displayed']['violations']:,}")
+emit("head-core-claimfalse", f"{core['exact']['false_assurances']:,}")
+emit("head-core-n-displayed", f"{core['displayed']['n']:,}")
+emit("head-core-violated-displayed-stable", f"{core['stable']['violations']:,}")
+emit("head-core-n-stable", f"{core['stable']['n']:,}")
+emit("head-core-changed", core["changed"])
+emit("head-core-slates", core["unique_slates"])
+emit("head-core-slates-ml1m", core["slates_by_dataset"]["ml1m"])
+emit("head-core-slates-mind", core["slates_by_dataset"]["mind"])
+emit("head-q3-n", q3["exact"]["n"])
+emit("head-q3-violated", q3["exact"]["violations"])
+emit("head-q3-caught", q3["exact"]["caught"])
+emit("head-q3-claimfalse", q3["exact"]["false_assurances"])
+emit("head-q3-claims", q3["exact"]["claims_compliant"])
+emit("head-q3-violated-displayed", q3["displayed"]["violations"])
+emit("head-q3-caught-displayed", q3["displayed"]["caught"])
+emit("head-q3-claimfalse-displayed", q3["displayed"]["false_assurances"])
+emit("head-q3-changed", q3["changed"])
+emit("head-q3-stable-n", q3["stable"]["n"])
+emit("head-q3-stable-violated", q3["stable"]["violations"])
+emit("head-q3-stable-caught", q3["stable"]["caught"])
+emit("head-q3-recall", pct(q3["exact"]["caught"] / q3["exact"]["violations"]))
+emit("head-q3-falseassurance", pct(q3["exact"]["false_assurances"] / q3["exact"]["claims_compliant"]))
+emit("head-q3-falseassurance-displayed", pct(q3["displayed"]["false_assurances"] / q3["displayed"]["claims_compliant"]))
+_q3r = get("qwen3:8b", "ml1m", "base")
+emit("head-q3-attempted", int(_q3r.n))
+emit("head-q3-invalid", int(_q3r.n_invalid))
+emit("head-q3-failinvalid-displayed", pct((q3["displayed"]["violations"] + _q3r.n_invalid) / _q3r.n))
+emit("head-q3-failinvalid-displayed-n", q3["displayed"]["violations"] + _q3r.n_invalid)
+emit("head-infeasible-n", RC["infeasible_core_G5"]["n"])
+emit("head-default-attempts-ml1m", int(get("qwen2.5:7b", "ml1m", "base").n))
+emit("head-default-attempts-mind", int(get("qwen2.5:7b", "mind", "base").n))
+for r_, name in zip(WC, ("qwen", "llama", "gemma")):
+    emit(f"head-{name}-prob-n", f"{r_['n']:,}")
+
+_l70 = get("llama3.3:70b", "ml1m", "base")
+emit("head-l70-input", f"{_paired_input('llama3.3:70b', 'ml1m'):.1f}")
+emit("head-l70-violated", pct(_l70.violation))
+emit("head-l70-violated-n", int(_l70.n_violated))
+emit("head-l70-caught", int(_l70.n_violated - _l70.n_claim_false))
+emit("head-q3-input", f"{_paired_input('qwen3:8b', 'ml1m'):.1f}")
+
+for x, name in zip(writing_revision.one_sided_rates(ROWS), ("qwen", "llama", "gemma")):
+    emit(f"head-onesided-{name}", pct(x["one_sided"] / x["n"]))
+    emit(f"head-allgroups-{name}", pct(x["all_groups"] / x["n"]))
+emit("head-onesided-n", writing_revision.one_sided_rates(ROWS)[0]["n"])
+
+_count_in = []
+for cell in ("count", "countm"):
+    rr = _CHK[(_CHK.dataset == "ml1m") & (_CHK.cell == cell) & _CHK.valid & _CHK.feasible]
+    _v = rr.binding.mean()
+    emit(f"head-{cell}-input", pct(_v, 0))
+    _count_in.append(_v)
+emit("head-count-input-min", pct(min(_count_in), 0))
+emit("head-count-input-max", pct(max(_count_in), 0))
+_count_v = [get(m, "ml1m", c).violation for m in MODELS for c in ("count", "countm")
+            if get(m, "ml1m", c) is not None]
+emit("head-count-output-min", pct(min(_count_v), 0))
+emit("head-count-output-max", pct(max(_count_v), 0))
+
+AU = {(x["model"], x["dataset"]): x for x in RC["matched_audits"]}
+for key, name in (("qwen2.5:7b", "qwen"), ("qwen2.5:14b", "q14")):
+    a = AU[(key, "ml1m")]
+    emit(f"head-audit-{name}-n", a["audit"]["n"])
+    emit(f"head-audit-{name}-base-caught", a["base"]["caught"])
+    emit(f"head-audit-{name}-violated", a["audit"]["violations"])
+    emit(f"head-audit-{name}-caught", a["audit"]["caught"])
+    emit(f"head-audit-{name}-falsealarms", a["audit"]["false_alarms"])
+    emit(f"head-audit-{name}-compliant", a["audit"]["compliant"])
+    emit(f"head-audit-{name}-falseassurances", a["audit"]["false_assurances"])
+    emit(f"head-audit-{name}-claims", a["audit"]["claims_compliant"])
+    emit(f"head-audit-{name}-auroc-base", f"{a['base_auroc']:.2f}")
+    emit(f"head-audit-{name}-auroc", f"{a['audit_auroc']:.2f}")
+
+FB = {(x["model"], x["cell"]): x for x in RC["feedback"]}
+for key, name in (("qwen2.5:7b", "qwen"), ("llama3.1:8b", "llama")):
+    f0, f1 = FB[(key, "feedback_retry_first")], FB[(key, "feedback_retry_final")]
+    emit(f"head-fb-{name}-first-failinvalid", pct((f0["violations"] + f0["invalid"]) / f0["attempted"]))
+    emit(f"head-fb-{name}-final-failinvalid", pct((f1["violations"] + f1["invalid"]) / f1["attempted"]))
+    for stat in ("valid", "violations", "caught", "false_alarms", "compliant",
+                 "false_assurances", "claims_compliant"):
+        emit(f"head-fb-{name}-final-{stat.replace('_', '')}", f1[stat])
+    if f1["boolean_auroc"] is not None:
+        emit(f"head-fb-{name}-final-auroc", f"{f1['boolean_auroc']:.2f}")
+
+_qr = get("qwen2.5:7b", "ml1m", "base")
+emit("head-repair-ms", f"{_qr.repair_ms_median:.0f}")
+emit("head-repair-n", int(_qr.n_with_label))
+emit("head-proj-gain", f"{-_qr.ndcg_minus_proj:+.3f}")
+emit("head-proj-gain-ci", f"[{-_qr.ndcg_minus_proj_hi:.3f}, {-_qr.ndcg_minus_proj_lo:.3f}]")
+
+with open(os.path.join(GEN, "writing_numbers.tex"), "w") as f:
+    f.write("% generated by artifact/code/make_assets.py -- do not edit\n")
+    for k, v in sorted(num.items()):
+        if k.startswith("writing-"):
+            f.write(f"\\expandafter\\def\\csname N@{k}\\endcsname{{{v}}}\n")
 with open(os.path.join(GEN, "numbers.tex"), "w") as f:
     f.write("% generated by artifact/code/make_assets.py -- do not edit\n")
     for k, v in sorted(num.items()):
-        f.write(f"\\expandafter\\def\\csname N@{k}\\endcsname{{{v}}}\n")
+        if not k.startswith("writing-"):
+            f.write(f"\\expandafter\\def\\csname N@{k}\\endcsname{{{v}}}\n")
 print(len(num), "macros")

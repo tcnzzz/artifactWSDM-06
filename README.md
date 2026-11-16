@@ -39,6 +39,8 @@ code/traces.py              stated vs true shares in reasoning traces -> results
 code/fidelity.py            Ollama vs llama.cpp agreement on shared slates
 code/ptrue.py               token probability of the claim by teacher forcing
 code/analyze.py             numeric check of every output -> results/checked.jsonl, results/summary.csv
+code/reporting_checks.py    rounding, infeasible-slate, audit and feedback checks -> used by make_assets.py
+code/writing_revision.py    clustered token-probability intervals and one-sided/all-floor rates
 code/direction.py           which way the under-exposed group moves -> results/direction.csv
 code/verifier.py            acceptance rules under a synthetic hidden-patience factor -> results/verifier*.csv
 code/sim_crc.py             numeric check of Theorem 1 -> results/sim_crc.csv
@@ -48,8 +50,10 @@ code/robustness.py          B9 split-half check and Qwen3 partial duplicate run 
 code/feedback_claims.py     B10 final-round claim honesty in the retry/memory loops -> results/feedback_claims.csv
 code/slack_strata.py        slate-level max-min slack t* (HiGHS) -> results/slack_strata.csv
 code/position_sensitivity.py  post-hoc re-scoring under inverse/linear/top-5/geometric weights
-code/make_assets.py         macros, tables and figure for the manuscript (manuscript/generated/)
+code/make_assets.py         macros, reporting tables and dose figure (manuscript/generated/, manuscript/figures/)
 code/number_map.py          every \N{key} in the paper -> value, generated file, source line -> number_map.csv
+code/verify_reporting_checks.py    standalone assertions for the reporting-check populations
+code/verify_writing_revision.py    standalone assertions for the clustered intervals and one-sided rates
 code/informativeness.py     AUROC of the claim vs free features, exposure shortfall -> results/informativeness.csv
 code/tolerance.py           verdicts under the three-decimal weights shown in the prompt -> results/tolerance.json
 code/paperfig.py            shared figure style for the manuscript figures
@@ -63,6 +67,11 @@ code/scrub_logs.sh          remove local paths and host addresses from run logs 
 reproduce.sh                regenerate numbers, rebuild the PDF, diff against the shipped files
 check_numbers.sh            regenerate numbers and diff with generated/ (no PDF build)
 number_map.csv              key,value,generated_file,script,script_line,used_in for all macros used
+../manuscript/generated/numbers.tex          every \N{key} macro the paper uses (no digits typed by hand)
+../manuscript/generated/writing_numbers.tex  clustered token-probability intervals (kept in their own file)
+../manuscript/generated/tab_base_reporting.tex, tab_factors_reporting.tex, tab_audit_reporting.tex
+../manuscript/figures/fig_dose_pgf.tex       dose figure as pgfplots source, generated from the JSON
+../manuscript/figures/data/fig_dose_series.json  plotted series behind that figure
 results/multiplicity.csv    Holm and BH-FDR over the 10 McNemar tests of Table 1
 results/multiplicity_table2.csv  Holm over the 45 tests of Table 2
 results/frontier.csv        210 frontier points (model x dataset x rho x policy); the `baseline` column marks the three B7 heuristics
@@ -110,6 +119,8 @@ for m in qwen2.5:7b llama3.1:8b gemma2:9b; do ./venv/bin/python code/ptrue.py --
 ./venv/bin/python code/calibration.py       # must run before make_assets.py (it writes calibration.csv)
 ./venv/bin/python code/robustness.py
 ./venv/bin/python code/feedback_claims.py    # must run before make_assets.py (it writes feedback_claims.csv)
+./venv/bin/python code/verify_reporting_checks.py
+./venv/bin/python code/verify_writing_revision.py
 ./venv/bin/python code/make_assets.py && (cd ../manuscript && latexmk -pdf main.tex)
 ```
 
@@ -131,6 +142,16 @@ python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
 failure leaves the paper untouched. Both scripts exit non-zero on any difference, on a macro used in
 the paper but missing from `generated/`, or on a macro that cannot be traced to a line of
 `code/make_assets.py`. They make no model call and no network request.
+
+Two standalone checks recompute the headline populations and exit non-zero if one changes:
+
+```bash
+./venv/bin/python code/verify_reporting_checks.py   # 10,038/6,552/6,544, Qwen3 14/5/2, audits, feedback
+./venv/bin/python code/verify_writing_revision.py   # clustered intervals and one-sided/all-floor counts
+```
+
+Both read saved records only (`results/checked.jsonl`, `results/ptrue/*.jsonl`,
+`results/feedback_claims.csv`).
 
 `number_map.csv` lists every `\N{key}` in the paper with its value, the generated file that defines
 it, the source line in `code/make_assets.py`, and the places in the paper that use it. It is produced
@@ -176,6 +197,36 @@ under `1/j`, linear `K-j+1`, top-5 and `0.8^(j-1)` weights, keeping the same
 at 99.7-100%; the qualitative conclusion does not depend on the weight shape.
 The paper does not add a sentence for this analysis because the four-page
 content limit is already full; the CSV is the artifact record.
+
+## Reporting checks and clustered intervals
+
+`code/reporting_checks.py` recomputes, from `results/checked.jsonl`, `results/ptrue/*.jsonl` and
+`results/feedback_claims.csv`, the comparisons the paper reports: the standard-prompt aggregate
+under unrounded and displayed weights, the Qwen3-8B default cell, the 276 infeasible five-group
+answers, the matched separate audits and the feedback loops. `code/make_assets.py` calls it, so the
+three reporting tables and every headline macro in the prose come from the same code path;
+`code/verify_reporting_checks.py` asserts the published values and fails if one moves.
+
+The standard-prompt aggregate covers 10,038 valid outputs on feasible slates (6,552 violations with
+unrounded weights, 6,544 with the weights displayed in the prompt). Twenty verdicts change when the
+prompt's three-decimal weights are used; these repeat 477 slates (292 ML-1M users and 185 MIND
+impressions), so the aggregate is not 10,038 independent cases. On the same code path, Qwen3-8B has
+14 violations and 2 detections under unrounded weights and 5 violations with 2 detections under
+displayed weights, and all 276 valid core-model answers to infeasible five-group slates claim
+compliance.
+
+`code/writing_revision.py` computes the stratified token-probability AUROC and a 2,000-replicate
+bootstrap (seed 20261115) that resamples slate IDs within each dataset, keeping every variant of a
+sampled slate together. It reads only the `ml1m` and `mind` trees under `results/ptrue/`; the same
+tree also holds the `mind_tied` and `mind_nanscores` diagnostic runs, which the paper does not pool.
+The point estimates are 0.539 [0.509, 0.569] (n = 3,980) for Qwen, 0.430 [0.384, 0.476] (n = 3,981)
+for Llama and 0.384 [0.349, 0.420] (n = 3,999) for Gemma. Its `one_sided_rates` helper re-scores the
+one-sided-floor outputs against every group floor (103/129, 180/189 and 107/147 violations for the
+three models) and supplies the prose macros for that comparison.
+
+The two count-control cells are the input-rate range quoted in the paper: 43.6% of inputs violate
+the top-5 count requirement and 60.3% violate the matched-count requirement, which the macros round
+to 44--60%. Output violation under those same requirements is 0--4%.
 
 ## Baseline heuristics, calibration and robustness (B7-B10)
 
@@ -264,5 +315,6 @@ This directory is the anonymised release copy. Relative to the working copy it h
 - No derived result file was edited. `results/summary.csv`, `results/informativeness.csv` and the
   other derived CSVs are byte-identical to the working copy.
 
-`code/make_assets.py` regenerates `manuscript/generated/numbers.tex`, the tables and the figure from
-these files; `latexmk` then rebuilds the PDF. Nothing displayed in the paper is typed by hand.
+`code/make_assets.py` regenerates `manuscript/generated/numbers.tex`, `writing_numbers.tex` and the
+three reporting tables, plus `manuscript/figures/fig_dose_pgf.tex` and its JSON data file, from these
+results; `latexmk` then rebuilds the PDF. Nothing displayed in the paper is typed by hand.

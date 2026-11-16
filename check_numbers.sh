@@ -31,7 +31,7 @@ if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/check_numbers.XXXXXX")
-trap 'if [ "$KEEP" = 0 ]; then cp -a "$TMP/generated/." "$MS/generated/"; [ -f "$TMP/fig_dose.pdf" ] && cp -a "$TMP/fig_dose.pdf" "$MS/figures/fig_dose.pdf"; for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv; do [ -f "$TMP/results/$f" ] && cp -a "$TMP/results/$f" "$ROOT/results/$f"; done; fi; rm -rf "$TMP"' EXIT
+trap 'if [ "$KEEP" = 0 ]; then rm -rf "$MS/generated"; cp -a "$TMP/generated" "$MS/generated"; cp -a "$TMP/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"; mkdir -p "$MS/figures/data"; cp -a "$TMP/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"; for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv; do [ -f "$TMP/results/$f" ] && cp -a "$TMP/results/$f" "$ROOT/results/$f"; done; fi; rm -rf "$TMP"' EXIT
 
 # ---- 1. snapshot the shipped outputs -------------------------------------
 mkdir -p "$TMP/generated" "$TMP/results"
@@ -40,7 +40,8 @@ for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedbac
          multiplicity.csv multiplicity_table2.csv; do
   cp -a "$ROOT/results/$f" "$TMP/results/$f" 2>/dev/null || true
 done
-cp -a "$MS/figures/fig_dose.pdf"             "$TMP/fig_dose.pdf"            2>/dev/null || true
+cp -a "$MS/figures/fig_dose_pgf.tex" "$TMP/fig_dose_pgf.tex" 2>/dev/null || true
+cp -a "$MS/figures/data/fig_dose_series.json" "$TMP/fig_dose_series.json" 2>/dev/null || true
 cut -d, -f1-7,9- "$TMP/results/frontier.csv" > "$TMP/frontier.notime.csv" 2>/dev/null || true
 
 # ---- 2. regenerate the derived CSVs that make_assets.py reads -------------
@@ -69,6 +70,9 @@ done
 
 # ---- 2b. regenerate macros, tables and figures from saved results --------
 say "== regenerating macros, tables and figures from saved results =="
+# Delete the shipped copies so a file that make_assets.py forgets to write is
+# reported as missing instead of silently passing the diff.
+rm -f "$MS/generated"/*.tex "$MS/figures/fig_dose_pgf.tex" "$MS/figures/data/fig_dose_series.json"
 if ! "$PY" "$ROOT/code/make_assets.py" > "$TMP/make_assets.log" 2>&1; then
   cat "$TMP/make_assets.log"
   bad "code/make_assets.py exited non-zero"
@@ -84,6 +88,17 @@ else
   bad "generated/ differs from the shipped copy"
   sed -n '1,40p' "$TMP/generated.diff"
 fi
+
+# ---- 3b. diff the pgfplots dose figure and its data ----------------------
+for pair in "fig_dose_pgf.tex:$MS/figures/fig_dose_pgf.tex" \
+            "fig_dose_series.json:$MS/figures/data/fig_dose_series.json"; do
+  name=${pair%%:*}; dest=${pair#*:}
+  if diff -q "$TMP/$name" "$dest" >/dev/null 2>&1; then
+    say "figures/$name: identical"
+  else
+    bad "figures/$name differs from the shipped copy"
+  fi
+done
 
 # ---- 4. diff the derived multiplicity tables -----------------------------
 for f in multiplicity.csv multiplicity_table2.csv; do

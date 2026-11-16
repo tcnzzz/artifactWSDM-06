@@ -116,7 +116,9 @@ summed with `exp` over the tokens `true` and `false`, and the reported value is
 `p_true / (p_true + p_false)`, i.e. the probability of the claim conditional on the field taking one
 of the two boolean values. Probabilities are shipped for Qwen2.5-7B, Llama-3.1-8B, Gemma-2-9B,
 Qwen2.5-14B and Llama-3.3-70B; Qwen3-8B and Command-R-35B have none, so their AUROC rows are empty
-rather than imputed.
+rather than imputed. `results/ptrue/<model>/` also keeps the two MIND ablations (`mind_tied`,
+`mind_nanscores`); `code/writing_revision.py` pools only the `ml1m` and `mind` directories, so the
+clustered interval in the paper excludes the diagnostic variants.
 
 ## Split-half and duplicate-run provenance
 The slate files keep the sampled users in their frozen order. `code/robustness.py` splits that

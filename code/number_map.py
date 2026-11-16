@@ -28,7 +28,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DEFAULT_MS = os.path.join(os.path.dirname(ROOT), "manuscript")
 ASSETS = os.path.join(HERE, "make_assets.py")
-GEN_FILES = ("numbers.tex", "tab_base.tex", "tab_factors.tex", "tab_repair.tex", "tab_verifier.tex")
+GEN_FILES = ("numbers.tex", "writing_numbers.tex", "tab_base_reporting.tex",
+             "tab_factors_reporting.tex", "tab_audit_reporting.tex")
 
 DEF_RE = re.compile(r"\\csname N@([^\\]+)\\endcsname\{(.*)\}\s*$")
 USE_RE = re.compile(r"\\N\{([^}]*)\}")
@@ -107,7 +108,8 @@ def trace_lines():
     try:
         for d, names in ((os.path.join(ms, "generated"), GEN_FILES),
                          (os.path.join(ROOT, "results"), ("multiplicity.csv", "multiplicity_table2.csv")),
-                         (os.path.join(ms, "figures"), ("fig_dose.pdf",))):
+                         (os.path.join(ms, "figures"), ("fig_dose_pgf.tex",)),
+                         (os.path.join(ms, "figures", "data"), ("fig_dose_series.json",))):
             for name in names:
                 src = os.path.join(d, name)
                 if os.path.exists(src):

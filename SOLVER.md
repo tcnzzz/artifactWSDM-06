@@ -241,17 +241,17 @@ not the exact repair.
 
 ## 9. Paper sentences and macro traceability
 
-The two sentences added for this note take every number from a generated macro:
+The deterministic-repair paragraph takes every number from a generated macro:
 
-* Setup, Reference points: `\N{solver-k-default}` (10) and
-  `\N{solver-version}` (1.12.0), emitted at `make_assets.py` lines 38-40.
-* Results, What to do instead: `\N{qwen-ml1m-base-repairms}` (7, from
-  `summary.csv`) and `\N{solver-hardware}` (Apple M5 Max). The per-cell macro is
-  emitted at `make_assets.py` line 136.
-* These are design constants (default `k`, group range, solver version,
-  machine), not measured results, but they are still macros so the paper
-  contains no hand-typed digits. If a constant changes, update `make_assets.py`
-  and this note together.
+* Results: `\N{head-repair-ms}` (7 ms median, from `summary.csv`),
+  `\N{head-default-attempts-ml1m}` (281 attempts) and `\N{solver-hardware}`
+  (Apple M5 Max). They are emitted at `make_assets.py` lines 744, 800 and 52.
+* The projection sentence uses `\N{head-repair-n}` (128 slates with held-out
+  positives), `\N{head-proj-gain}` (+0.014) and `\N{head-proj-gain-ci}`
+  ([0.004, 0.024]), emitted at lines 801-803 from the same `summary.csv` row.
+* The hardware string and the solver version are design constants, not measured
+  results, but they are still macros so the paper contains no hand-typed
+  digits. If a constant changes, update `make_assets.py` and this note together.
 
 `artifact_release/number_map.csv` records the exact source line and the paper
 location of every macro key.
