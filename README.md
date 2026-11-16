@@ -67,6 +67,8 @@ code/scrub_logs.sh          remove local paths and host addresses from run logs 
 reproduce.sh                regenerate numbers, rebuild the PDF, diff against the shipped files
 check_numbers.sh            regenerate numbers and diff with generated/ (no PDF build)
 number_map.csv              key,value,generated_file,script,script_line,used_in for all macros used
+revision-data/              recorded outputs of the revision checks: checks.json, pooled_auroc_clustered.json,
+                            writing_analysis.json, diagnostic_conditions.csv, projection_utility.csv, source hashes
 ../manuscript/generated/numbers.tex          every \N{key} macro the paper uses (no digits typed by hand)
 ../manuscript/generated/writing_numbers.tex  clustered token-probability intervals (kept in their own file)
 ../manuscript/generated/tab_base_reporting.tex, tab_factors_reporting.tex, tab_audit_reporting.tex
@@ -227,6 +229,11 @@ three models) and supplies the prose macros for that comparison.
 The two count-control cells are the input-rate range quoted in the paper: 43.6% of inputs violate
 the top-5 count requirement and 60.3% violate the matched-count requirement, which the macros round
 to 44--60%. Output violation under those same requirements is 0--4%.
+
+`revision-data/` keeps the recorded output of these checks (`checks.json`,
+`pooled_auroc_clustered.json`, `writing_analysis.json`, `diagnostic_conditions.csv`,
+`projection_utility.csv`) and the SHA-256 of the records they were computed from. The modules
+recompute the same values from `results/`; the directory is the historical record, not an input.
 
 ## Baseline heuristics, calibration and robustness (B7-B10)
 

@@ -1,0 +1,16 @@
+{
+  "unchanged_files": [
+    "references.bib",
+    "generated/numbers.tex",
+    "generated/writing_numbers.tex",
+    "generated/tab_base_writing.tex",
+    "generated/tab_factors_writing.tex",
+    "figures/data/fig_dose_series.json"
+  ],
+  "citation_keys_unchanged": true,
+  "main_pages": 6,
+  "technical_pages": 4,
+  "supplement_pages": 4,
+  "writing_sha256": "61d899ab6b0e974eed93d536a7c5a75c343d966bf8939ef2207b0d8d9c580e08",
+  "analysis_assertions": "passed"
+}

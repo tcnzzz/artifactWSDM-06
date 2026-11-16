@@ -1,0 +1,33 @@
+{
+  "pdf_sha256": "0736104ad7afa3462394a6bfcb536df7b7ba47e48029fa64e4b97b244744d330",
+  "pages": 6,
+  "technical_pages": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "references_pages": [
+    5,
+    6
+  ],
+  "compile": "passed",
+  "undefined_references_or_citations": false,
+  "overfull_boxes": 0,
+  "bibliography_underfull_boxes": 7,
+  "protected_original_files_verified": [
+    "references.bib",
+    "writing.md",
+    "generated/numbers.tex",
+    "generated/tab_base.tex",
+    "generated/tab_base_styled.tex",
+    "generated/tab_factors.tex",
+    "generated/tab_factors_styled.tex",
+    "sections/07-ethics.tex",
+    "figures/data/fig_dose_series.json"
+  ],
+  "visual_inspection": "all six pages; final count range re-rendered",
+  "paired_reanalysis": "all ten McNemar/Holm results verified; pooled AUROC points match original source to 1e-10",
+  "new_model_inference": false,
+  "remote_changes": false
+}
