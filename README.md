@@ -17,8 +17,11 @@ bundling HiGHS 1.12.0); `SOLVER.md` documents the variables, objective, constrai
 problem sizes, infeasible-slate handling and the timing protocol, including the hardware caveat
 for the reported median.
 
-The paper must sit next to this directory as `../manuscript` for the rebuild scripts to work; see
-"Verify without running a model" below.
+The paper source normally sits next to this directory as `../manuscript`; see "Verify without
+running a model" below. If it is absent, both scripts fall back to the `generated/` and
+`figures/` copies shipped here: every number is still regenerated from the saved results and
+diffed, and only the two checks that read the `.tex` sources (the macro-usage map and the PDF
+build) are skipped.
 
 ## Layout
 
@@ -67,6 +70,10 @@ code/scrub_logs.sh          remove local paths and host addresses from run logs 
 reproduce.sh                regenerate numbers, rebuild the PDF, diff against the shipped files
 check_numbers.sh            regenerate numbers and diff with generated/ (no PDF build)
 number_map.csv              key,value,generated_file,script,script_line,used_in for all macros used
+generated/                  the five generated .tex files the paper \inputs (numbers, writing numbers,
+                            three reporting tables), so the scripts run without the paper source
+figures/fig_dose_pgf.tex    dose figure as pgfplots source, generated from the JSON
+figures/data/fig_dose_series.json  plotted series behind that figure
 revision-data/              recorded outputs of the revision checks: checks.json, pooled_auroc_clustered.json,
                             writing_analysis.json, diagnostic_conditions.csv, projection_utility.csv, source hashes
 ../manuscript/generated/numbers.tex          every \N{key} macro the paper uses (no digits typed by hand)
@@ -145,6 +152,11 @@ failure leaves the paper untouched. Both scripts exit non-zero on any difference
 the paper but missing from `generated/`, or on a macro that cannot be traced to a line of
 `code/make_assets.py`. They make no model call and no network request.
 
+Neither script needs the paper source: with no `../manuscript`, they compare against the
+`generated/`, `figures/fig_dose_pgf.tex` and `figures/data/fig_dose_series.json` copies shipped here,
+and print that the macro-usage map and the PDF build were skipped. Placing the paper at
+`../manuscript` enables those two checks.
+
 Two standalone checks recompute the headline populations and exit non-zero if one changes:
 
 ```bash
@@ -160,9 +172,11 @@ it, the source line in `code/make_assets.py`, and the places in the paper that u
 by `code/number_map.py`, which re-runs `make_assets.py` under a line tracer; `script_line` is the
 line that first created the macro.
 
-The paper must sit next to this directory as `../manuscript` (normally the release directory is
-named `artifact/`). `code/make_assets.py` writes to `../manuscript/generated/`; edit `MS` at the top
-of that file if your layout differs.
+The paper source normally sits next to this directory as `../manuscript` (normally the release
+directory is named `artifact/`). `code/make_assets.py` writes to `../manuscript/generated/`; set
+`MANUSCRIPT_DIR` to write elsewhere, or edit `MS` at the top of that file if your layout differs.
+When the paper is absent, `check_numbers.sh` and `reproduce.sh` regenerate into a temporary copy of
+the shipped `generated/` files and skip only the paper-side checks.
 
 ## Ablations kept on purpose
 

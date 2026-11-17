@@ -22,7 +22,18 @@ fail=0
 say() { printf '%s\n' "$*"; }
 bad() { printf 'FAIL: %s\n' "$*"; fail=1; }
 
-[ -d "$MS/generated" ] || { bad "no manuscript/generated next to the release (expected $MS/generated)"; exit 1; }
+# The paper source normally sits next to this directory.  Without it, fall
+# back to the shipped generated/ copy: every number is still regenerated from
+# the saved results and diffed, but the two checks that read the .tex sources
+# (the \N{key} usage map and the PDF build) are skipped.
+PAPER=1
+if [ ! -d "$MS/generated" ]; then
+  if [ ! -d "$ROOT/generated" ]; then
+    bad "no ../manuscript/generated and no shipped generated/ copy"
+    exit 1
+  fi
+  PAPER=0
+fi
 
 if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
   say "ERROR: $PY cannot import pandas/numpy/matplotlib."
@@ -31,6 +42,18 @@ if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/check_numbers.XXXXXX")
+
+if [ "$PAPER" = 0 ]; then
+  say "note: ../manuscript not found; using the shipped generated/ copy"
+  say "      the macro-usage map is skipped, every number is still regenerated and diffed"
+  MS="$TMP/ms"
+  mkdir -p "$MS/generated" "$MS/figures/data"
+  cp -a "$ROOT/generated/." "$MS/generated/"
+  cp -a "$ROOT/figures/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"
+  cp -a "$ROOT/figures/data/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"
+fi
+export MANUSCRIPT_DIR="$MS"
+
 trap 'if [ "$KEEP" = 0 ]; then rm -rf "$MS/generated"; cp -a "$TMP/generated" "$MS/generated"; cp -a "$TMP/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"; mkdir -p "$MS/figures/data"; cp -a "$TMP/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"; [ -f "$TMP/fig_frontier.pdf" ] && cp -a "$TMP/fig_frontier.pdf" "$ROOT/figures/fig_frontier.pdf"; for f in frontier.csv calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv; do [ -f "$TMP/results/$f" ] && cp -a "$TMP/results/$f" "$ROOT/results/$f"; done; fi; rm -rf "$TMP"' EXIT
 
 # ---- 1. snapshot the shipped outputs -------------------------------------
@@ -113,17 +136,23 @@ for f in multiplicity.csv multiplicity_table2.csv; do
 done
 
 # ---- 5. every \N{key} in the paper has a value and a source line ---------
-say "== tracing every \\N{key} to code/make_assets.py =="
-if "$PY" "$ROOT/code/number_map.py" --out "$TMP/number_map.csv" > "$TMP/number_map.log" 2>&1; then
-  tail -1 "$TMP/number_map.log"
-  if ! diff -q "$TMP/number_map.csv" "$ROOT/number_map.csv" >/dev/null 2>&1; then
-    bad "number_map.csv is stale (rerun code/number_map.py)"
+if [ "$PAPER" = 1 ]; then
+  say "== tracing every \\N{key} to code/make_assets.py =="
+  if "$PY" "$ROOT/code/number_map.py" --out "$TMP/number_map.csv" > "$TMP/number_map.log" 2>&1; then
+    tail -1 "$TMP/number_map.log"
+    if ! diff -q "$TMP/number_map.csv" "$ROOT/number_map.csv" >/dev/null 2>&1; then
+      bad "number_map.csv is stale (rerun code/number_map.py)"
+    else
+      say "number_map.csv: identical"
+    fi
   else
-    say "number_map.csv: identical"
+    cat "$TMP/number_map.log"
+    bad "a macro is undefined or untraced"
   fi
 else
-  cat "$TMP/number_map.log"
-  bad "a macro is undefined or untraced"
+  say "== macro trace =="
+  say "paper source not present: number_map.csv is shipped with every key, value and script line;"
+  say "place the paper at ../manuscript to regenerate and compare its used_in column"
 fi
 
 if [ "$fail" = 0 ]; then

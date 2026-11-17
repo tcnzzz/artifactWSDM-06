@@ -27,8 +27,21 @@ bad() { printf 'FAIL: %s\n' "$*"; fail=1; }
 
 say "release: $ROOT"
 say "paper:   $MS"
-[ -d "$MS" ] || { bad "no manuscript/ next to the release"; exit 1; }
-[ -d "$MS/generated" ] || { bad "no manuscript/generated"; exit 1; }
+
+# Without the paper source, fall back to the shipped generated/ copy: the
+# numbers are still regenerated and diffed, but the macro-usage map and the
+# PDF build are skipped.
+PAPER=1
+if [ ! -d "$MS/generated" ]; then
+  if [ ! -d "$ROOT/generated" ]; then
+    bad "no ../manuscript/generated and no shipped generated/ copy"
+    exit 1
+  fi
+  PAPER=0
+  BUILD=0
+  say "note:    ../manuscript not found; using the shipped generated/ copy"
+  say "         the macro-usage map and the PDF build are skipped"
+fi
 
 if ! "$PY" -c 'import pandas, numpy, matplotlib' >/dev/null 2>&1; then
   say "ERROR: $PY cannot import pandas/numpy/matplotlib."
@@ -38,6 +51,15 @@ fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/reproduce.XXXXXX")
 trap '[ -f "$TMP/fig_frontier.pdf" ] && cp -a "$TMP/fig_frontier.pdf" "$ROOT/figures/fig_frontier.pdf"; [ -f "$TMP/frontier.csv" ] && cp -a "$TMP/frontier.csv" "$ROOT/results/frontier.csv"; rm -rf "$TMP"' EXIT
+
+if [ "$PAPER" = 0 ]; then
+  MS="$TMP/ms"
+  mkdir -p "$MS/generated" "$MS/figures/data"
+  cp -a "$ROOT/generated/." "$MS/generated/"
+  cp -a "$ROOT/figures/fig_dose_pgf.tex" "$MS/figures/fig_dose_pgf.tex"
+  cp -a "$ROOT/figures/data/fig_dose_series.json" "$MS/figures/data/fig_dose_series.json"
+fi
+export MANUSCRIPT_DIR="$MS"
 
 # ---- 1. snapshot the shipped numbers -------------------------------------
 mkdir -p "$TMP/generated"
@@ -91,8 +113,12 @@ say "== 8/11 macros, tables and dose figure =="
 [ "${PIPESTATUS[0]}" = 0 ] || { bad "make_assets.py failed"; exit 1; }
 
 say "== 9/11 number map =="
-"$PY" "$ROOT/code/number_map.py" 2>&1 | tee "$TMP/number_map.log"
-[ "${PIPESTATUS[0]}" = 0 ] || bad "number_map.py failed"
+if [ "$PAPER" = 1 ]; then
+  "$PY" "$ROOT/code/number_map.py" 2>&1 | tee "$TMP/number_map.log"
+  [ "${PIPESTATUS[0]}" = 0 ] || bad "number_map.py failed"
+else
+  say "skipped: the paper source is needed to read its \\N{key} uses"
+fi
 
 # ---- 3. compare with the shipped copies ---------------------------------
 say "== 10/11 diff against shipped files =="
@@ -120,6 +146,7 @@ fi
 for f in multiplicity.csv multiplicity_table2.csv slack_strata.csv position_sensitivity.csv \
          calibration.csv split_halves.csv duplicate_run.csv feedback_claims.csv number_map.csv; do
   [ -f "$TMP/$f" ] || continue
+  if [ "$f" = "number_map.csv" ] && [ "$PAPER" = 0 ]; then continue; fi
   case "$f" in
     number_map.csv) shipped="$ROOT/$f" ;;
     *)              shipped="$ROOT/results/$f" ;;
@@ -132,7 +159,10 @@ for f in multiplicity.csv multiplicity_table2.csv slack_strata.csv position_sens
 done
 
 # ---- 4. build the paper --------------------------------------------------
-if [ "$BUILD" = 1 ]; then
+if [ "$BUILD" = 1 ] && [ "$PAPER" = 0 ]; then
+  say "== 11/11 building the PDF =="
+  say "skipped: place the paper source at ../manuscript to build it"
+elif [ "$BUILD" = 1 ]; then
   if ! command -v latexmk >/dev/null 2>&1; then
     bad "latexmk not found; rerun with --no-build to skip the PDF"
   else
@@ -163,7 +193,13 @@ if [ "$BUILD" = 1 ]; then
 fi
 
 if [ "$fail" = 0 ]; then
-  say "REPRODUCED: numbers match and the paper builds"
+  if [ "$PAPER" = 1 ] && [ "$BUILD" = 1 ]; then
+    say "REPRODUCED: numbers match and the paper builds"
+  elif [ "$PAPER" = 1 ]; then
+    say "REPRODUCED: numbers match (PDF build skipped by --no-build)"
+  else
+    say "REPRODUCED: numbers match (paper source not present, PDF build skipped)"
+  fi
 else
   say "REPRODUCTION FAILED"
 fi

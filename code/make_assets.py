@@ -20,7 +20,10 @@ import reporting_checks  # noqa: E402
 import writing_revision  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
-MS = os.path.join(os.path.dirname(ROOT), "manuscript")
+# The paper source normally sits next to this directory as ../manuscript.
+# MANUSCRIPT_DIR overrides it, so the checks can run against a temporary copy
+# of the shipped generated/ files when the paper source is not present.
+MS = os.environ.get("MANUSCRIPT_DIR") or os.path.join(os.path.dirname(ROOT), "manuscript")
 GEN = os.path.join(MS, "generated")
 FIG = os.path.join(MS, "figures")
 FIGDATA = os.path.join(FIG, "data")
